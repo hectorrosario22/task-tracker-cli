@@ -123,4 +123,20 @@ public class TaskService
         await JsonSerializer.SerializeAsync(stream, tasks, _jsonOptions);
         return (true, null);
     }
+
+    public async Task<string> GetTasksAsJson(string? status)
+    {
+        using FileStream stream = File.Open(
+            _filepath, FileMode.Open,
+            FileAccess.ReadWrite, FileShare.None
+        );
+        var tasks = await JsonSerializer.DeserializeAsync<List<TrackerTask>>(stream, _jsonOptions) ?? [];
+
+        var filteredTasks = tasks
+            .Where(t => string.IsNullOrEmpty(status) || t.Status == status)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToList();
+
+        return JsonSerializer.Serialize(filteredTasks, _jsonOptions);
+    }
 }

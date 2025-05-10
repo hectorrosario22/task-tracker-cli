@@ -27,6 +27,9 @@ switch (command)
     case "mark-done":
         await MarkTaskWithStatusCommand(commandArgs, "done");
         break;
+    case "list":
+        await ListTasksCommand(commandArgs);
+        break;
     default:
         Console.WriteLine("Invalid command.");
         break;
@@ -117,4 +120,17 @@ async Task MarkTaskWithStatusCommand(string[] commandArgs, string status)
     {
         Console.WriteLine(ErrorMessage);
     }
+}
+
+async Task ListTasksCommand(string[] commandArgs)
+{
+    string? status = commandArgs.Length > 0 ? commandArgs[0] : null;
+    if (commandArgs.Length > 0 && string.IsNullOrWhiteSpace(status))
+    {
+        Console.WriteLine("Invalid status.");
+        return;
+    }
+
+    var tasksJson = await taskService.GetTasksAsJson(status);
+    Console.WriteLine(tasksJson);
 }
