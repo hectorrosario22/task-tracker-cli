@@ -93,4 +93,34 @@ public class TaskService
         await JsonSerializer.SerializeAsync(stream, tasks, _jsonOptions);
         return (true, null);
     }
+
+    public async Task<(bool Success, string? ErrorMessage)> MarkTaskWithStatus(int id, string status)
+    {
+        using FileStream stream = File.Open(
+            _filepath, FileMode.Open,
+            FileAccess.ReadWrite, FileShare.None
+        );
+        var tasks = await JsonSerializer.DeserializeAsync<List<TrackerTask>>(stream, _jsonOptions) ?? [];
+
+        var index = tasks.FindIndex(t => t.Id == id);
+        if (index == -1)
+        {
+            return (false, $"Task with ID {id} not found.");
+        }
+
+        var task = tasks.First(t => t.Id == id);
+        task = task with
+        {
+            Status = status,
+            UpdatedAt = DateTime.Now
+        };
+
+        tasks[index] = task;
+
+        stream.SetLength(0);
+        stream.Position = 0;
+
+        await JsonSerializer.SerializeAsync(stream, tasks, _jsonOptions);
+        return (true, null);
+    }
 }

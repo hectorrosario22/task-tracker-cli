@@ -21,6 +21,12 @@ switch (command)
     case "delete":
         await DeleteCommand(commandArgs);
         break;
+    case "mark-in-progress":
+        await MarkTaskWithStatusCommand(commandArgs, "in-progress");
+        break;
+    case "mark-done":
+        await MarkTaskWithStatusCommand(commandArgs, "done");
+        break;
     default:
         Console.WriteLine("Invalid command.");
         break;
@@ -86,6 +92,27 @@ async Task DeleteCommand(string[] commandArgs)
     }
 
     var (Success, ErrorMessage) = await taskService.DeleteTask(id);
+    if (!Success)
+    {
+        Console.WriteLine(ErrorMessage);
+    }
+}
+
+async Task MarkTaskWithStatusCommand(string[] commandArgs, string status)
+{
+    if (commandArgs.Length != 1)
+    {
+        Console.WriteLine("Please provide a task ID.");
+        return;
+    }
+
+    if (!int.TryParse(commandArgs[0], out int id))
+    {
+        Console.WriteLine("Invalid task ID.");
+        return;
+    }
+
+    var (Success, ErrorMessage) = await taskService.MarkTaskWithStatus(id, status);
     if (!Success)
     {
         Console.WriteLine(ErrorMessage);
