@@ -71,4 +71,26 @@ public class TaskService
         await JsonSerializer.SerializeAsync(stream, tasks, _jsonOptions);
         return (true, null);
     }
+
+    public async Task<(bool Success, string? ErrorMessage)> DeleteTask(int id)
+    {
+        using FileStream stream = File.Open(
+            _filepath, FileMode.Open,
+            FileAccess.ReadWrite, FileShare.None
+        );
+        var tasks = await JsonSerializer.DeserializeAsync<List<TrackerTask>>(stream, _jsonOptions) ?? [];
+
+        var index = tasks.FindIndex(t => t.Id == id);
+        if (index == -1)
+        {
+            return (false, $"Task with ID {id} not found.");
+        }
+
+        tasks.RemoveAt(index);
+        stream.SetLength(0);
+        stream.Position = 0;
+
+        await JsonSerializer.SerializeAsync(stream, tasks, _jsonOptions);
+        return (true, null);
+    }
 }

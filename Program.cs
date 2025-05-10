@@ -18,6 +18,9 @@ switch (command)
     case "update":
         await UpdateCommand(commandArgs);
         break;
+    case "delete":
+        await DeleteCommand(commandArgs);
+        break;
     default:
         Console.WriteLine("Invalid command.");
         break;
@@ -62,6 +65,27 @@ async Task UpdateCommand(string[] commandArgs)
     }
 
     var (Success, ErrorMessage) = await taskService.UpdateTask(id, commandArgs[1]);
+    if (!Success)
+    {
+        Console.WriteLine(ErrorMessage);
+    }
+}
+
+async Task DeleteCommand(string[] commandArgs)
+{
+    if (commandArgs.Length != 1)
+    {
+        Console.WriteLine("Please provide a task ID.");
+        return;
+    }
+
+    if (!int.TryParse(commandArgs[0], out int id))
+    {
+        Console.WriteLine("Invalid task ID.");
+        return;
+    }
+
+    var (Success, ErrorMessage) = await taskService.DeleteTask(id);
     if (!Success)
     {
         Console.WriteLine(ErrorMessage);
