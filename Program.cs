@@ -73,10 +73,10 @@ async Task UpdateCommand(string[] commandArgs)
         return;
     }
 
-    var (Success, ErrorMessage) = await taskService.UpdateTask(id, commandArgs[1]);
-    if (!Success)
+    var result = await taskService.UpdateTask(id, commandArgs[1]);
+    if (!result.IsSuccess)
     {
-        Console.WriteLine(ErrorMessage);
+        Console.WriteLine(result.ErrorMessage);
     }
 }
 
@@ -94,10 +94,10 @@ async Task DeleteCommand(string[] commandArgs)
         return;
     }
 
-    var (Success, ErrorMessage) = await taskService.DeleteTask(id);
-    if (!Success)
+    var result = await taskService.DeleteTask(id);
+    if (!result.IsSuccess)
     {
-        Console.WriteLine(ErrorMessage);
+        Console.WriteLine(result.ErrorMessage);
     }
 }
 
@@ -115,10 +115,10 @@ async Task MarkTaskWithStatusCommand(string[] commandArgs, string status)
         return;
     }
 
-    var (Success, ErrorMessage) = await taskService.MarkTaskWithStatus(id, status);
-    if (!Success)
+    var result = await taskService.MarkTaskWithStatus(id, status);
+    if (!result.IsSuccess)
     {
-        Console.WriteLine(ErrorMessage);
+        Console.WriteLine(result.ErrorMessage);
     }
 }
 
@@ -131,6 +131,6 @@ async Task ListTasksCommand(string[] commandArgs)
         return;
     }
 
-    var tasksJson = await taskService.GetTasksAsJson(status);
-    Console.WriteLine(tasksJson);
+    var result = await taskService.GetTasksAsJson(status);
+    Console.WriteLine(!result.IsSuccess ? result.ErrorMessage : result.Value);
 }

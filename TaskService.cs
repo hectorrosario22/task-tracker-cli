@@ -4,6 +4,7 @@ namespace TaskTrackerCLI;
 
 public class TaskService
 {
+    readonly HashSet<string> _allowedStatuses = ["todo", "in-progress", "done"];
     readonly string _filepath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tasks.json");
     readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -22,121 +23,117 @@ public class TaskService
 
     public async Task<int> AddTask(string description)
     {
-        using FileStream stream = File.Open(
-            _filepath, FileMode.Open,
-            FileAccess.ReadWrite, FileShare.None
-        );
-        var tasks = await JsonSerializer.DeserializeAsync<List<TrackerTask>>(stream, _jsonOptions) ?? [];
-
-        TrackerTask task = new(description)
+        var tasks = await LoadTasks();
+        var newTask = new TrackerTask(description)
         {
             Id = tasks.Count == 0 ? 1 : tasks.Max(d => d.Id) + 1,
             CreatedAt = DateTime.Now,
         };
-        tasks.Add(task);
+        tasks.Add(newTask);
 
-        stream.SetLength(0);
-        stream.Position = 0;
-
-        await JsonSerializer.SerializeAsync(stream, tasks, _jsonOptions);
-        return task.Id;
+        await SaveTasks(tasks);
+        return newTask.Id;
     }
 
-    public async Task<(bool Success, string? ErrorMessage)> UpdateTask(int id, string description)
+    public async Task<Result> UpdateTask(int id, string description)
     {
-        using FileStream stream = File.Open(
-            _filepath, FileMode.Open,
-            FileAccess.ReadWrite, FileShare.None
-        );
-        var tasks = await JsonSerializer.DeserializeAsync<List<TrackerTask>>(stream, _jsonOptions) ?? [];
-
-        var index = tasks.FindIndex(t => t.Id == id);
-        if (index == -1)
+        var tasks = await LoadTasks();
+        var findResult = FindTask(tasks, id);
+        if (!findResult.HasValue)
         {
-            return (false, $"Task with ID {id} not found.");
+            return Result.Failure($"Task with ID {id} not found.");
         }
 
-        var task = tasks.First(t => t.Id == id);
-        task = task with
+        var task = findResult.Value.Task with
         {
             Description = description,
             UpdatedAt = DateTime.Now
         };
 
-        tasks[index] = task;
+        tasks[findResult.Value.Index] = task;
 
-        stream.SetLength(0);
-        stream.Position = 0;
-
-        await JsonSerializer.SerializeAsync(stream, tasks, _jsonOptions);
-        return (true, null);
+        await SaveTasks(tasks);
+        return Result.Success();
     }
 
-    public async Task<(bool Success, string? ErrorMessage)> DeleteTask(int id)
+    public async Task<Result> DeleteTask(int id)
     {
-        using FileStream stream = File.Open(
-            _filepath, FileMode.Open,
-            FileAccess.ReadWrite, FileShare.None
-        );
-        var tasks = await JsonSerializer.DeserializeAsync<List<TrackerTask>>(stream, _jsonOptions) ?? [];
-
-        var index = tasks.FindIndex(t => t.Id == id);
-        if (index == -1)
+        var tasks = await LoadTasks();
+        var findResult = FindTask(tasks, id);
+        if (!findResult.HasValue)
         {
-            return (false, $"Task with ID {id} not found.");
+            return Result.Failure($"Task with ID {id} not found.");
         }
 
-        tasks.RemoveAt(index);
-        stream.SetLength(0);
-        stream.Position = 0;
-
-        await JsonSerializer.SerializeAsync(stream, tasks, _jsonOptions);
-        return (true, null);
+        tasks.RemoveAt(findResult.Value.Index);
+        await SaveTasks(tasks);
+        return Result.Success();
     }
 
-    public async Task<(bool Success, string? ErrorMessage)> MarkTaskWithStatus(int id, string status)
+    public async Task<Result> MarkTaskWithStatus(int id, string status)
     {
-        using FileStream stream = File.Open(
-            _filepath, FileMode.Open,
-            FileAccess.ReadWrite, FileShare.None
-        );
-        var tasks = await JsonSerializer.DeserializeAsync<List<TrackerTask>>(stream, _jsonOptions) ?? [];
-
-        var index = tasks.FindIndex(t => t.Id == id);
-        if (index == -1)
+        if (!_allowedStatuses.Contains(status))
         {
-            return (false, $"Task with ID {id} not found.");
+            return Result.Failure($"Invalid status '{status}'. Allowed values are: {string.Join(", ", _allowedStatuses)}");
         }
 
-        var task = tasks.First(t => t.Id == id);
-        task = task with
+        var tasks = await LoadTasks();
+        var findResult = FindTask(tasks, id);
+        if (!findResult.HasValue)
+        {
+            return Result.Failure($"Task with ID {id} not found.");
+        }
+
+        var task = findResult.Value.Task with
         {
             Status = status,
             UpdatedAt = DateTime.Now
         };
 
-        tasks[index] = task;
-
-        stream.SetLength(0);
-        stream.Position = 0;
-
-        await JsonSerializer.SerializeAsync(stream, tasks, _jsonOptions);
-        return (true, null);
+        tasks[findResult.Value.Index] = task;
+        await SaveTasks(tasks);
+        return Result.Success();
     }
 
-    public async Task<string> GetTasksAsJson(string? status)
+    public async Task<Result<string>> GetTasksAsJson(string? status)
     {
-        using FileStream stream = File.Open(
-            _filepath, FileMode.Open,
-            FileAccess.ReadWrite, FileShare.None
-        );
-        var tasks = await JsonSerializer.DeserializeAsync<List<TrackerTask>>(stream, _jsonOptions) ?? [];
+        if (!string.IsNullOrEmpty(status) && !_allowedStatuses.Contains(status))
+        {
+            return Result<string>.Failure($"Invalid status '{status}'. Allowed values are: {string.Join(", ", _allowedStatuses)}");
+        }
 
+        var tasks = await LoadTasks();
         var filteredTasks = tasks
             .Where(t => string.IsNullOrEmpty(status) || t.Status == status)
             .OrderByDescending(t => t.CreatedAt)
             .ToList();
 
-        return JsonSerializer.Serialize(filteredTasks, _jsonOptions);
+        var tasksAsJson = JsonSerializer.Serialize(filteredTasks, _jsonOptions);
+        return Result<string>.Success(tasksAsJson);
+    }
+
+    async Task<List<TrackerTask>> LoadTasks()
+    {
+        using FileStream stream = File.Open(
+            _filepath, FileMode.Open,
+            FileAccess.Read, FileShare.Read
+        );
+        var tasks = await JsonSerializer.DeserializeAsync<List<TrackerTask>>(stream, _jsonOptions);
+        return tasks ?? [];
+    }
+
+    async Task SaveTasks(List<TrackerTask> tasks)
+    {
+        using FileStream stream = File.Open(
+            _filepath, FileMode.Create,
+            FileAccess.Write, FileShare.None
+        );
+        await JsonSerializer.SerializeAsync(stream, tasks, _jsonOptions);
+    }
+
+    (int Index, TrackerTask Task)? FindTask(List<TrackerTask> tasks, int id)
+    {
+        var index = tasks.FindIndex(t => t.Id == id);
+        return index >= 0 ? (index, tasks[index]) : null;
     }
 }
