@@ -1,64 +1,73 @@
-# 📝 Task Tracker CLI
+# Task Tracker CLI
 
-Task tracker is a project used to track and manage your tasks. In this task, you will build a simple command line interface (CLI) to track what you need to do, what you have done, and what you are currently working on. This project will help you practice your programming skills, including working with the filesystem, handling user inputs, and building a simple CLI application.
+A simple console application built in C# to manage tasks stored in a JSON file. This project is described [here](https://roadmap.sh/projects/task-tracker).
 
----
+## Features
 
-## 📋 Requirements
+- Add new tasks with a description
+- Update task descriptions
+- Delete tasks by ID
+- Mark tasks with statuses: `todo`, `in-progress`, `done`
+- List all tasks or filter by status
+- Tasks are persisted in a `tasks.json` file
 
-The application should run from the command line, accept user actions and inputs as arguments, and store the tasks in a JSON file. The user should be able to:
+## Requirements
 
-- Add, Update, and Delete tasks
-- Mark a task as in progress or done
-- List all tasks
-- List all tasks that are done
-- List all tasks that are not done
-- List all tasks that are in progress
+- [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) or higher
 
-Here are some constraints to guide the implementation:
+## Getting Started
 
-- You can use any programming language to build this project.
-- Use positional arguments in command line to accept user inputs.
-- Use a JSON file to store the tasks in the current directory.
-- The JSON file should be created if it does not exist.
-- Use the native file system module of your programming language to interact with the JSON file.
-- Do not use any external libraries or frameworks to build this project.
-- Ensure to handle errors and edge cases gracefully.
-
----
-
-## ⚙️ Example
+**Clone the repository**
 
 ```bash
-# Adding a new task
-task-cli add "Buy groceries"
-# Output: Task added successfully (ID: 1)
-
-# Updating and deleting tasks
-task-cli update 1 "Buy groceries and cook dinner"
-task-cli delete 1
-
-# Marking a task as in progress or done
-task-cli mark-in-progress 1
-task-cli mark-done 1
-
-# Listing all tasks
-task-cli list
-
-# Listing tasks by status
-task-cli list done
-task-cli list todo
-task-cli list in-progress
+git clone https://github.com/YOUR-USERNAME/task-tracker-cli.git
+cd task-tracker-cli
 ```
 
-## 🧾 Task properties
+**Build the project**
 
-Each task should have the following properties:
+```bash
+dotnet build
+```
 
-- **`id`**: A unique identifier for the task
-- **`description`**: A short description of the task
-- **`status`**: The status of the task (**`todo`**, **`in-progress`**, **`done`**)
-- **`createdAt`**: The date and time when the task was created
-- **`updatedAt`**: The date and time when the task was last updated
+**Run commands**
 
-Make sure to add these properties to the JSON file when adding a new task and update them when updating a task.
+```bash
+# Create a new task
+dotnet run -- add "Buy groceries"
+
+# List all tasks
+dotnet run -- list
+
+# List filtered tasks by status todo (allowed values: todo, in-progress, done)
+dotnet run -- list todo
+
+# Update the description of the task with ID 1
+dotnet run -- update 1 "Buy groceries and cook dinner"
+
+# Mark task with ID 1 as In Progress
+dotnet run -- mark-in-progress 1
+
+# Mark task with ID 1 as Done
+dotnet run -- mark-done 1
+
+# Delete a task with ID 1
+dotnet run -- delete 1
+```
+
+### Usage
+
+```bash
+dotnet run -- <command> [arguments]
+```
+
+### Available Commands
+
+| Command            | Arguments               | Description                          |
+|--------------------|--------------------------|--------------------------------------|
+| `add`              | `"description"`          | Adds a new task                      |
+| `update`           | `<id> "new description"` | Updates the task description         |
+| `delete`           | `<id>`                   | Deletes a task by ID                 |
+| `mark-in-progress` | `<id>`                   | Marks the task as `in-progress`      |
+| `mark-done`        | `<id>`                   | Marks the task as `done`             |
+| `list`             | `[status]`               | Lists tasks, optionally by status    |
