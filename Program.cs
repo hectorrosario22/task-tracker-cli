@@ -49,8 +49,8 @@ async Task AddCommand(string[] commandArgs)
         return;
     }
 
-    var id = await taskService.AddTask(commandArgs[0]);
-    Console.WriteLine($"Task added successfully (ID: {id})");
+    var result = await taskService.AddTask(commandArgs[0]);
+    Console.WriteLine($"Task added successfully (ID: {result.Value})");
 }
 
 async Task UpdateCommand(string[] commandArgs)

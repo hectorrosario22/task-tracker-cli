@@ -21,7 +21,7 @@ public class TaskService
         }
     }
 
-    public async Task<int> AddTask(string description)
+    public async Task<Result<int>> AddTask(string description)
     {
         var tasks = await LoadTasks();
         var newTask = new TrackerTask(description)
@@ -32,7 +32,7 @@ public class TaskService
         tasks.Add(newTask);
 
         await SaveTasks(tasks);
-        return newTask.Id;
+        return Result<int>.Success(newTask.Id);
     }
 
     public async Task<Result> UpdateTask(int id, string description)
