@@ -1,14 +1,19 @@
-﻿using TaskTrackerCLI;
+﻿using Microsoft.Extensions.DependencyInjection;
+using TaskTrackerCLI.Interfaces;
+using TaskTrackerCLI.Services;
+
+var serviceProvider = BuildServiceProvider();
+var taskService = serviceProvider.GetRequiredService<ITaskService>();
+var printService = serviceProvider.GetRequiredService<IPrintService>();
 
 if (args.Length == 0)
 {
-    Console.WriteLine("Please provide a command.");
+    printService.PrintError("Please provide a command.");
     return;
 }
 
 string command = args[0].ToLower();
 string[] commandArgs = [.. args.Skip(1)];
-TaskService taskService = new();
 
 switch (command)
 {
@@ -31,7 +36,7 @@ switch (command)
         await ListTasksCommand(commandArgs);
         break;
     default:
-        Console.WriteLine("Invalid command.");
+        printService.PrintError("Invalid command.");
         break;
 }
 
@@ -39,87 +44,90 @@ async Task AddCommand(string[] commandArgs)
 {
     if (commandArgs.Length != 1)
     {
-        Console.WriteLine("Please provide a task description.");
-        return;
-    }
-
-    if (string.IsNullOrWhiteSpace(commandArgs[0]))
-    {
-        Console.WriteLine("Task description cannot be empty.");
+        printService.PrintError("Please provide a task description.");
         return;
     }
 
     var result = await taskService.AddTask(commandArgs[0]);
-    Console.WriteLine($"Task added successfully (ID: {result.Value})");
+    if (!result.IsSuccess)
+    {
+        printService.PrintError(result.ErrorMessage!);
+        return;
+    }
+
+    printService.PrintSuccess($"Task added successfully (ID: {result.Value})");
 }
 
 async Task UpdateCommand(string[] commandArgs)
 {
     if (commandArgs.Length != 2)
     {
-        Console.WriteLine("Please provide a task ID and a new description.");
+        printService.PrintError("Please provide a task ID and a new description.");
         return;
     }
 
     if (!int.TryParse(commandArgs[0], out int id))
     {
-        Console.WriteLine("Invalid task ID.");
-        return;
-    }
-
-    if (string.IsNullOrWhiteSpace(commandArgs[1]))
-    {
-        Console.WriteLine("Task description cannot be empty.");
+        printService.PrintError("Invalid task ID.");
         return;
     }
 
     var result = await taskService.UpdateTask(id, commandArgs[1]);
     if (!result.IsSuccess)
     {
-        Console.WriteLine(result.ErrorMessage);
+        printService.PrintError(result.ErrorMessage!);
+        return;
     }
+
+    printService.PrintSuccess($"Task updated successfully (ID: {id})");
 }
 
 async Task DeleteCommand(string[] commandArgs)
 {
     if (commandArgs.Length != 1)
     {
-        Console.WriteLine("Please provide a task ID.");
+        printService.PrintError("Please provide a task ID.");
         return;
     }
 
     if (!int.TryParse(commandArgs[0], out int id))
     {
-        Console.WriteLine("Invalid task ID.");
+        printService.PrintError("Invalid task ID.");
         return;
     }
 
     var result = await taskService.DeleteTask(id);
     if (!result.IsSuccess)
     {
-        Console.WriteLine(result.ErrorMessage);
+        printService.PrintError(result.ErrorMessage!);
+        return;
     }
+
+    printService.PrintSuccess($"Task deleted successfully (ID: {id})");
 }
 
 async Task MarkTaskWithStatusCommand(string[] commandArgs, string status)
 {
     if (commandArgs.Length != 1)
     {
-        Console.WriteLine("Please provide a task ID.");
+        printService.PrintError("Please provide a task ID.");
         return;
     }
 
     if (!int.TryParse(commandArgs[0], out int id))
     {
-        Console.WriteLine("Invalid task ID.");
+        printService.PrintError("Invalid task ID.");
         return;
     }
 
     var result = await taskService.MarkTaskWithStatus(id, status);
     if (!result.IsSuccess)
     {
-        Console.WriteLine(result.ErrorMessage);
+        printService.PrintError(result.ErrorMessage!);
+        return;
     }
+
+    printService.PrintSuccess($"Task marked as '{status}' successfully (ID: {id})");
 }
 
 async Task ListTasksCommand(string[] commandArgs)
@@ -127,10 +135,25 @@ async Task ListTasksCommand(string[] commandArgs)
     string? status = commandArgs.Length > 0 ? commandArgs[0] : null;
     if (commandArgs.Length > 0 && string.IsNullOrWhiteSpace(status))
     {
-        Console.WriteLine("Invalid status.");
+        printService.PrintError("Invalid status.");
         return;
     }
 
-    var result = await taskService.GetTasksAsJson(status);
-    Console.WriteLine(!result.IsSuccess ? result.ErrorMessage : result.Value);
+    var result = await taskService.GetTasks(status);
+    if (!result.IsSuccess)
+    {
+        printService.PrintError(result.ErrorMessage!);
+        return;
+    }
+    
+    printService.PrintTasks(result.Value ?? []);
+}
+
+ServiceProvider BuildServiceProvider()
+{
+    var services = new ServiceCollection();
+    services.AddScoped<ITaskService, TaskService>();
+    services.AddScoped<IPrintService, PrintService>();
+
+    return services.BuildServiceProvider();
 }
