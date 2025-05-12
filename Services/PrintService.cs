@@ -1,4 +1,5 @@
 using TaskTrackerCLI.Interfaces;
+using TaskTrackerCLI.Models;
 
 namespace TaskTrackerCLI.Services;
 

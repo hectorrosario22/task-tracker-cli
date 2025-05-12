@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace TaskTrackerCLI;
+namespace TaskTrackerCLI.Models;
 
 public class TrackerTask : IValidatableObject
 {

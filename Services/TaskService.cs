@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using TaskTrackerCLI.Interfaces;
+using TaskTrackerCLI.Models;
 
 namespace TaskTrackerCLI.Services;
 

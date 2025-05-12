@@ -1,4 +1,4 @@
-namespace TaskTrackerCLI;
+namespace TaskTrackerCLI.Models;
 
 public record Result
 {

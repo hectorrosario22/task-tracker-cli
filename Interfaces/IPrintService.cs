@@ -1,3 +1,5 @@
+using TaskTrackerCLI.Models;
+
 namespace TaskTrackerCLI.Interfaces;
 
 public interface IPrintService
