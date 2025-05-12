@@ -20,7 +20,7 @@ A simple console application built in C# to manage tasks stored in a JSON file. 
 **Clone the repository**
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/task-tracker-cli.git
+git clone https://github.com/hectorrosario22/task-tracker-cli.git
 cd task-tracker-cli
 ```
 
